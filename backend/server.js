@@ -20,6 +20,12 @@ const PAWAPAY_BASE = process.env.PAWAPAY_ENV === 'production'
     ? 'https://api.pawapay.io'
     : 'https://api.sandbox.pawapay.io';
 
+// VeriPoints (shared ORIZIS wallet) — OPTIONAL. Both must be set for the
+// wallet endpoints to do anything; otherwise they report disabled and the
+// storefront stays Mobile-Money only. Secrets come from env, never code.
+const VERIPOINTS_API = process.env.VERIPOINTS_API;            // central VeriPoints service base URL
+const VERIPOINTS_SERVER_KEY = process.env.VERIPOINTS_SERVER_KEY; // secret server key for capture/credit
+
 app.get('/api/health', (req, res) => {
     res.json({
         ok: true,
@@ -27,7 +33,8 @@ app.get('/api/health', (req, res) => {
         keyConfigured: Boolean(RAPIDAPI_KEY),
         apiHost: API_HOST,
         paymentsConfigured: Boolean(PAWAPAY_TOKEN),
-        paymentsEnv: process.env.PAWAPAY_ENV === 'production' ? 'production' : 'sandbox'
+        paymentsEnv: process.env.PAWAPAY_ENV === 'production' ? 'production' : 'sandbox',
+        veripointsConfigured: Boolean(VERIPOINTS_API && VERIPOINTS_SERVER_KEY)
     });
 });
 
@@ -183,6 +190,49 @@ app.get('/api/pay/status', async (req, res) => {
     } catch (error) {
         // Status often 404s for a moment right after initiation - treat as pending
         res.json({ status: 'pending' });
+    }
+});
+
+/* =====================================================================
+   VERIPOINTS (shared ORIZIS wallet) — OPTIONAL server proxy
+   These are inert until VERIPOINTS_API + VERIPOINTS_SERVER_KEY are set.
+   They forward money-moving actions (capture a hold, credit loyalty points)
+   to the central VeriPoints service with the secret server key, so the
+   browser never mutates balances directly. The central service itself is
+   built in the VeriPoints project — this is only the store's thin proxy.
+   ===================================================================== */
+const veripointsReady = () => Boolean(VERIPOINTS_API && VERIPOINTS_SERVER_KEY);
+const veripointsHeaders = () => ({
+    Authorization: `Bearer ${VERIPOINTS_SERVER_KEY}`,
+    'Content-Type': 'application/json'
+});
+
+// Redeem: capture a hold the signed-in customer already placed via the SDK.
+app.post('/api/veripoints/redeem', async (req, res) => {
+    if (!veripointsReady()) return res.json({ disabled: true, captured: false });
+    const { holdId, siteId, reference } = req.body || {};
+    if (!holdId) return res.status(400).json({ error: 'INVALID_INPUT' });
+    try {
+        // Full capture to the platform wallet. Split config lives centrally.
+        const r = await axios.post(`${VERIPOINTS_API.replace(/\/$/, '')}/api/capture`,
+            { holdId, siteId, reference }, { headers: veripointsHeaders(), timeout: 25000 });
+        res.json({ captured: Boolean(r.data && (r.data.captured || r.data.ok)) });
+    } catch (error) {
+        res.status(502).json({ error: 'VERIPOINTS_ERROR', message: error.message, captured: false });
+    }
+});
+
+// Earn: credit loyalty points to the customer after a successful order.
+app.post('/api/veripoints/earn', async (req, res) => {
+    if (!veripointsReady()) return res.json({ disabled: true, credited: false });
+    const { uid, points, siteId, reference } = req.body || {};
+    if (!uid || !(points > 0)) return res.status(400).json({ error: 'INVALID_INPUT' });
+    try {
+        const r = await axios.post(`${VERIPOINTS_API.replace(/\/$/, '')}/api/credit`,
+            { uid, points, siteId, reference }, { headers: veripointsHeaders(), timeout: 25000 });
+        res.json({ credited: Boolean(r.data && (r.data.credited || r.data.ok)) });
+    } catch (error) {
+        res.status(502).json({ error: 'VERIPOINTS_ERROR', message: error.message, credited: false });
     }
 });
 

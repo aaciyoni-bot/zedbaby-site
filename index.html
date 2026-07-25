@@ -105,6 +105,9 @@
                 </button>
             </div>
 
+            <!-- VeriPoints slot (shared ORIZIS wallet) — filled by the add-on only when enabled -->
+            <div id="vpSlot" class="hidden shrink-0"></div>
+
             <button onclick="toggleCart(true)" class="relative shrink-0 text-slate-600 hover:text-baby-600 transition p-2">
                 <i class="fas fa-cart-shopping text-2xl"></i>
                 <span id="cartCount" class="absolute -top-1 -right-1 bg-zam-red text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
@@ -357,7 +360,36 @@
                     <p class="text-emerald-100 text-sm mt-1">Total to pay: <b id="payTotal" class="text-white">K0.00</b></p>
                 </div>
                 <div class="p-5 space-y-4">
-                    <div>
+                    <!-- VeriPoints: payment-method selector (add-on fills/reveals it only when enabled + signed in) -->
+                    <div id="vpMethodWrap" class="hidden">
+                        <label class="text-sm font-semibold text-slate-600 block mb-2">How would you like to pay?</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button type="button" id="vpMethodMomo" onclick="vpSetMethod('momo')" class="vp-method-btn border-2 rounded-xl p-3 text-center transition">
+                                <i class="fas fa-mobile-screen text-lg"></i>
+                                <div class="text-xs font-bold mt-1">Mobile Money</div>
+                            </button>
+                            <button type="button" id="vpMethodPoints" onclick="vpSetMethod('veripoints')" class="vp-method-btn border-2 rounded-xl p-3 text-center transition">
+                                <i class="fas fa-coins text-lg"></i>
+                                <div class="text-xs font-bold mt-1">VeriPoints</div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- VeriPoints: partial redeem on a Mobile Money order (add-on reveals it) -->
+                    <div id="vpRedeemBlock" class="hidden bg-baby-50 border border-baby-100 rounded-xl p-3">
+                        <label class="text-sm font-semibold text-baby-700 flex items-center justify-between">
+                            <span><i class="fas fa-coins mr-1"></i> Use my points</span>
+                            <span id="vpRedeemBalance" class="text-xs font-normal text-slate-500"></span>
+                        </label>
+                        <div class="flex items-center gap-2 mt-2">
+                            <input id="vpRedeemInput" type="number" min="0" step="1" placeholder="0" oninput="vpOnRedeemInput()"
+                                class="flex-1 border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-baby-500">
+                            <button type="button" onclick="vpRedeemMax()" class="text-xs font-bold text-baby-700 bg-white border border-baby-200 rounded-lg px-3 py-2 hover:bg-baby-100">Max</button>
+                        </div>
+                        <p id="vpRedeemHint" class="text-[11px] text-slate-500 mt-1"></p>
+                    </div>
+
+                    <div id="momoNetworkBlock">
                         <label class="text-sm font-semibold text-slate-600 block mb-2">Choose your network</label>
                         <div class="grid grid-cols-3 gap-2">
                             <button onclick="selectProvider('mtn', this)" class="provider-btn border-2 rounded-xl p-3 text-center transition hover:border-baby-500">
@@ -374,7 +406,7 @@
                             </button>
                         </div>
                     </div>
-                    <div>
+                    <div id="momoPhoneBlock">
                         <label class="text-sm font-semibold text-slate-600 block mb-2">Mobile money number</label>
                         <div class="flex">
                             <span class="bg-slate-100 border border-r-0 border-slate-300 rounded-l-xl px-3 flex items-center text-sm font-semibold text-slate-500">🇿🇲 +260</span>
@@ -391,8 +423,17 @@
                         <label class="text-sm font-semibold text-slate-600 block mb-2">Delivery address / town</label>
                         <input id="payAddress" type="text" placeholder="e.g. Plot 25, Kabulonga, Lusaka" class="w-full border border-slate-300 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-zam-green">
                     </div>
+                    <!-- VeriPoints: full pay-with-points panel (add-on reveals it when method = VeriPoints) -->
+                    <div id="vpPayBlock" class="hidden bg-baby-50 border border-baby-100 rounded-xl p-4 text-center">
+                        <i class="fas fa-coins text-2xl text-baby-600"></i>
+                        <p class="text-sm text-slate-600 mt-2">Pay the full total from your VeriPoints balance.</p>
+                        <p class="mt-1 text-sm"><span class="text-slate-500">Cost:</span> <b id="vpPayCost" class="text-baby-700"></b></p>
+                        <p id="vpPayBalance" class="text-xs text-slate-500 mt-1"></p>
+                        <p id="vpPayShort" class="text-zam-red text-xs font-semibold mt-1 hidden"></p>
+                    </div>
+
                     <p id="payError" class="text-zam-red text-sm font-semibold hidden"></p>
-                    <button onclick="submitPayment()" class="w-full bg-zam-green hover:bg-green-800 text-white font-bold py-3.5 rounded-xl transition">
+                    <button id="paySendBtn" onclick="submitPayment()" class="w-full bg-zam-green hover:bg-green-800 text-white font-bold py-3.5 rounded-xl transition">
                         Send payment request <i class="fas fa-arrow-right ml-1"></i>
                     </button>
                     <button onclick="closeCheckout()" class="w-full text-slate-400 text-sm py-1 hover:text-slate-600">Cancel</button>
@@ -507,6 +548,8 @@
         .cat-chip-deal i { animation: flamePulse 1.6s ease-in-out infinite; }
         @keyframes flamePulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.15); opacity: .85; } }
         .provider-btn.selected { border-color: #0284c7 !important; background: #f0f9ff; }
+        .vp-method-btn { border-color: #e2e8f0; color: #475569; }
+        .vp-method-btn.selected { border-color: #0284c7; background: #f0f9ff; color: #0369a1; }
         .faq-item { background: #f0f9ff; border-radius: 16px; padding: 16px 20px; }
         .faq-item summary { font-weight: 700; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; }
         .faq-item summary::-webkit-details-marker { display: none; }
@@ -533,7 +576,21 @@
         SERVICE_FEE_PERCENT: 5,           // fee shown at checkout (covers MoMo charges)
         BUDGET_MAX_ZMW: 200,              // price ceiling for the "Deals under K200" section
         WHATSAPP_ORDERS: "260971234567",  // orders are also sent to this WhatsApp number
-        WHATSAPP_SUPPORT: "260971234567"  // customer support WhatsApp (floating button + support section)
+        WHATSAPP_SUPPORT: "260971234567", // customer support WhatsApp (floating button + support section)
+
+        /* ── VeriPoints — shared ORIZIS wallet & loyalty (OPTIONAL add-on) ──
+           Modular: when VERIPOINTS_ENABLED is false (or the SDK can't load),
+           the storefront behaves EXACTLY as before — Mobile Money only, no
+           extra buttons, no errors. Flip to true only once the central
+           VeriPoints project is live and VERIPOINTS_API points at it.
+           NOTE: for the Zambian stores, points are treated as loyalty points
+           (Kwacha-denominated, decoupled from the VeriPoints 1-token=1-₪ rule)
+           — pending the contract update tracked in the VeriPoints project. */
+        VERIPOINTS_ENABLED: false,        // master switch (false = MoMo-only, unchanged site)
+        VERIPOINTS_API: "",               // central VeriPoints origin, e.g. "https://<central>.web.app" (serves /sdk/veripoints-sdk.js)
+        VERIPOINTS_SITE_ID: "zedbaby",    // this store's id in the shared wallet ledger
+        EARN_PERCENT: 3,                  // loyalty points earned per successful order (% of amount paid)
+        REDEEM_RATE: 1                    // ZMW value of 1 point when redeeming (1 = 1 point → K1)
     };
 
     /* ================================================================
@@ -948,7 +1005,10 @@
     function cartTotals() {
         const subtotal = cart.reduce((s, i) => s + itemZmw(i) * i.qty, 0);
         const fees = subtotal * CONFIG.SERVICE_FEE_PERCENT / 100;
-        return { subtotal, fees, total: subtotal + fees };
+        const gross = subtotal + fees;
+        // VeriPoints redeem discount (0 unless the add-on is enabled + points applied)
+        const redeem = (typeof vpRedeemZmw === 'function') ? vpRedeemZmw(gross) : 0;
+        return { subtotal, fees, gross, redeem, total: Math.max(0, gross - redeem) };
     }
 
     function renderCart() {
@@ -1002,6 +1062,7 @@
         selectedProvider = null;
         document.querySelectorAll('.provider-btn').forEach(b => b.classList.remove('selected'));
         $('payError').classList.add('hidden');
+        if (typeof vpOnCheckoutOpen === 'function') vpOnCheckoutOpen(); // reset VeriPoints method/redeem (no-op when off)
         $('payTotal').textContent = fmtK(cartTotals().total);
         $('payStep1').classList.remove('hidden');
         $('payStep2').classList.add('hidden');
@@ -1060,15 +1121,23 @@
     }
 
     async function submitPayment() {
-        const phone = $('payPhone').value.trim();
         const name = $('payName').value.trim();
         const address = $('payAddress').value.trim();
         const err = $('payError');
 
-        if (!selectedProvider) { err.textContent = 'Please choose your mobile network.'; err.classList.remove('hidden'); return; }
-        if (!/^(9|7)\d{8}$/.test(phone)) { err.textContent = 'Enter a valid Zambian number, e.g. 971234567.'; err.classList.remove('hidden'); return; }
+        // Delivery details are required for every payment method
         if (name.length < 3) { err.textContent = 'Please enter your full name.'; err.classList.remove('hidden'); return; }
         if (address.length < 5) { err.textContent = 'Please enter your delivery address.'; err.classList.remove('hidden'); return; }
+
+        // VeriPoints full-points payment (only when the add-on is on and chosen)
+        if (window.VP && VP.enabled && VP.method === 'veripoints') {
+            return vpSubmitPointsPayment({ name, address });
+        }
+
+        // ── Mobile Money path (unchanged default) ──
+        const phone = $('payPhone').value.trim();
+        if (!selectedProvider) { err.textContent = 'Please choose your mobile network.'; err.classList.remove('hidden'); return; }
+        if (!/^(9|7)\d{8}$/.test(phone)) { err.textContent = 'Enter a valid Zambian number, e.g. 971234567.'; err.classList.remove('hidden'); return; }
         err.classList.add('hidden');
 
         const t = cartTotals();
@@ -1091,11 +1160,12 @@
         // Simulated mode keeps a short "check your phone" pause for realism
         if (outcome !== true) await new Promise(r => setTimeout(r, 4000));
 
-        const ref = 'ZG' + String(Math.floor(100000 + Math.random() * 900000));
+        const ref = 'ZB' + String(Math.floor(100000 + Math.random() * 900000));
         $('orderRef').textContent = '#' + ref;
         $('payStep2').classList.add('hidden');
         $('payStep3').classList.remove('hidden');
         sendOrderToWhatsApp(ref, order);
+        if (typeof vpAwardEarn === 'function') vpAwardEarn(t.total, ref); // loyalty accrual (no-op when off)
     }
 
     // Real AliExpress products use the numeric itemId as their id, so we can
@@ -1114,10 +1184,13 @@
             const head = `• ${i.qty}x ${i.title} — ${fmtK(itemZmw(i) * i.qty)}`;
             return link ? [head, `   🔗 ${link}`] : [head];
         });
+        const payLine = o.provider === 'veripoints'
+            ? `💳 Paid with VeriPoints`
+            : `📞 +260${o.phone} (${String(o.provider || '').toUpperCase()})`;
         const lines = [
             `🍼 *New ZedBaby Order ${'#' + ref}*`,
             `👤 ${o.name}`,
-            `📞 +260${o.phone} (${o.provider.toUpperCase()})`,
+            payLine,
             `📍 ${o.address}`,
             ``,
             `🛒 *Order — tap each link to buy on AliExpress:*`,
@@ -1132,6 +1205,7 @@
     function finishOrder() {
         cart = [];
         saveCart();
+        if (typeof vpResetCheckout === 'function') vpResetCheckout(); // clear any redeem/method selection
         closeCheckout();
         showToast('🎉 Thank you for shopping with ZedBaby!');
     }
@@ -1195,6 +1269,185 @@
     if (IS_MOBILE && !IS_INSTALLED) setTimeout(showInstallBanner, 3000);
 
     /* ================================================================
+       VERIPOINTS ADD-ON — shared ORIZIS wallet & loyalty (modular, optional)
+       ----------------------------------------------------------------
+       Entirely inert unless CONFIG.VERIPOINTS_ENABLED is true AND the SDK
+       loads AND the user signs in. When off, the storefront is Mobile-Money
+       only, exactly as without this block — no extra buttons, no errors.
+       Balance changes are server-verified: the store backend proxies
+       capture/credit to the central VeriPoints service with a secret server
+       key (see backend /api/veripoints/*). The client never mutates balances.
+       Reuses the shared SDK from the central VeriPoints project — this file
+       does NOT implement the wallet itself.
+       ================================================================ */
+    const VP = { enabled: false, ready: false, user: null, balance: { available: 0, held: 0 }, method: 'momo', redeemPoints: 0 };
+    const vpRate = () => (CONFIG.REDEEM_RATE > 0 ? CONFIG.REDEEM_RATE : 1);
+    const vpApi = path => (CONFIG.VERIPOINTS_API || '').replace(/\/$/, '') + path;
+    const vpPointsForZmw = zmw => Math.ceil(zmw / vpRate());
+    const vpZmwForPoints = pts => pts * vpRate();
+
+    // ZMW discount from redeemed points (0 unless enabled, signed in, MoMo method)
+    function vpRedeemZmw(gross) {
+        if (!VP.enabled || !VP.user || VP.method !== 'momo' || !VP.redeemPoints) return 0;
+        // cap points by balance AND by what the order can absorb (whole points only)
+        const maxPts = Math.min(VP.balance.available, Math.floor(gross / vpRate()));
+        const pts = Math.max(0, Math.min(VP.redeemPoints, maxPts));
+        return vpZmwForPoints(pts);
+    }
+
+    function vpLoadScript(src) {
+        return new Promise((res, rej) => {
+            const s = document.createElement('script');
+            s.src = src; s.async = true;
+            s.onload = res; s.onerror = () => rej(new Error('VeriPoints SDK failed to load'));
+            document.head.appendChild(s);
+        });
+    }
+
+    async function vpInit() {
+        if (!CONFIG.VERIPOINTS_ENABLED || !CONFIG.VERIPOINTS_API) return; // stays MoMo-only
+        try {
+            await vpLoadScript(vpApi('/sdk/veripoints-sdk.js'));
+            if (!window.VeriPoints) return;
+            await window.VeriPoints.init({ siteId: CONFIG.VERIPOINTS_SITE_ID || 'zedbaby', origin: CONFIG.VERIPOINTS_API });
+            VP.enabled = true; VP.ready = true;
+            window.VeriPoints.onUser(u => {
+                VP.user = u || null;
+                if (u) { try { window.VeriPoints.onBalance(b => { VP.balance = b || VP.balance; vpRenderSlot(); vpUpdateCheckoutUI(); }); } catch (e) {} }
+                vpRenderSlot(); vpUpdateCheckoutUI();
+            });
+            vpRenderSlot();
+        } catch (e) {
+            console.warn('VeriPoints add-on unavailable — Mobile Money only:', e);
+            VP.enabled = false;
+        }
+    }
+
+    function vpRenderSlot() {
+        const slot = $('vpSlot'); if (!slot) return;
+        if (!VP.enabled) { slot.classList.add('hidden'); return; }
+        slot.classList.remove('hidden');
+        slot.innerHTML = VP.user
+            ? `<button onclick="vpSignOut()" title="Your VeriPoints balance" class="flex items-center gap-1.5 bg-baby-50 border border-baby-100 text-baby-700 font-bold text-xs sm:text-sm rounded-full px-3 py-1.5 hover:bg-baby-100 transition"><i class="fas fa-coins text-gold"></i> ${VP.balance.available.toLocaleString()} pts</button>`
+            : `<button onclick="vpSignIn()" class="flex items-center gap-1.5 bg-baby-600 hover:bg-baby-700 text-white font-bold text-xs sm:text-sm rounded-full px-3 py-1.5 transition"><i class="fas fa-coins"></i> Sign in</button>`;
+    }
+
+    function vpSignIn() { if (VP.enabled) window.VeriPoints.signInWithGoogle().catch(() => showToast('Sign-in cancelled')); }
+    function vpSignOut() { if (VP.enabled) window.VeriPoints.signOut().catch(() => {}); }
+
+    function vpOnCheckoutOpen() { VP.method = 'momo'; VP.redeemPoints = 0; const ri = $('vpRedeemInput'); if (ri) ri.value = ''; vpUpdateCheckoutUI(); }
+    function vpResetCheckout() { vpOnCheckoutOpen(); }
+
+    function vpSetMethod(m) {
+        VP.method = m;
+        if (m === 'veripoints') { VP.redeemPoints = 0; const ri = $('vpRedeemInput'); if (ri) ri.value = ''; }
+        vpUpdateCheckoutUI();
+    }
+
+    function vpOnRedeemInput() { VP.redeemPoints = Math.max(0, parseInt($('vpRedeemInput').value) || 0); vpUpdateCheckoutUI(); }
+    function vpRedeemMax() {
+        const gross = cartTotals().gross;
+        const maxPts = Math.min(VP.balance.available, Math.floor(gross / vpRate()));
+        VP.redeemPoints = maxPts; const ri = $('vpRedeemInput'); if (ri) ri.value = maxPts; vpUpdateCheckoutUI();
+    }
+
+    // Reflects the current method/redeem selection in the checkout modal.
+    // Safe to call anytime; hides everything and restores the MoMo-only view when off.
+    function vpUpdateCheckoutUI() {
+        const methodWrap = $('vpMethodWrap'); if (!methodWrap) return;
+        const show = VP.enabled && !!VP.user;
+        const redeemBlock = $('vpRedeemBlock'), payBlock = $('vpPayBlock');
+        const netBlock = $('momoNetworkBlock'), phoneBlock = $('momoPhoneBlock'), sendBtn = $('paySendBtn');
+        methodWrap.classList.toggle('hidden', !show);
+        const mb = $('vpMethodMomo'), pb = $('vpMethodPoints');
+        if (mb) mb.classList.toggle('selected', VP.method === 'momo');
+        if (pb) pb.classList.toggle('selected', VP.method === 'veripoints');
+
+        const resetBtn = () => { if (sendBtn) { sendBtn.disabled = false; sendBtn.classList.remove('opacity-50'); sendBtn.innerHTML = 'Send payment request <i class="fas fa-arrow-right ml-1"></i>'; } };
+
+        if (!show) {
+            redeemBlock && redeemBlock.classList.add('hidden');
+            payBlock && payBlock.classList.add('hidden');
+            netBlock && netBlock.classList.remove('hidden');
+            phoneBlock && phoneBlock.classList.remove('hidden');
+            resetBtn();
+            return;
+        }
+
+        if (VP.method === 'veripoints') {
+            netBlock && netBlock.classList.add('hidden');
+            phoneBlock && phoneBlock.classList.add('hidden');
+            redeemBlock && redeemBlock.classList.add('hidden');
+            payBlock && payBlock.classList.remove('hidden');
+            const gross = cartTotals().gross, cost = vpPointsForZmw(gross), enough = VP.balance.available >= cost;
+            $('vpPayCost').textContent = cost.toLocaleString() + ' pts (' + fmtK(gross) + ')';
+            $('vpPayBalance').textContent = 'Your balance: ' + VP.balance.available.toLocaleString() + ' pts';
+            const short = $('vpPayShort'); short.classList.toggle('hidden', enough);
+            if (!enough) short.textContent = 'Not enough points — you need ' + (cost - VP.balance.available).toLocaleString() + ' more.';
+            if (sendBtn) { sendBtn.disabled = !enough; sendBtn.classList.toggle('opacity-50', !enough); sendBtn.innerHTML = '<i class="fas fa-coins mr-1"></i> Pay ' + cost.toLocaleString() + ' pts'; }
+        } else {
+            netBlock && netBlock.classList.remove('hidden');
+            phoneBlock && phoneBlock.classList.remove('hidden');
+            payBlock && payBlock.classList.add('hidden');
+            redeemBlock && redeemBlock.classList.remove('hidden');
+            $('vpRedeemBalance').textContent = VP.balance.available.toLocaleString() + ' pts available';
+            const gross = cartTotals().gross, maxPts = Math.min(VP.balance.available, Math.floor(gross / vpRate()));
+            const ri = $('vpRedeemInput'); if (ri) ri.max = maxPts;
+            const applied = Math.min(VP.redeemPoints, maxPts);
+            $('vpRedeemHint').textContent = applied > 0
+                ? ('−' + fmtK(vpZmwForPoints(applied)) + ' off · you pay ' + fmtK(Math.max(0, gross - vpZmwForPoints(applied))))
+                : ('Redeem up to ' + maxPts.toLocaleString() + ' pts on this order');
+            resetBtn();
+        }
+        $('payTotal').textContent = fmtK(cartTotals().total);
+    }
+
+    // Pay the full order from points: client places the hold, the store
+    // backend captures it server-side (with its secret key). Any failure
+    // falls back cleanly to the Mobile Money form.
+    async function vpSubmitPointsPayment(o) {
+        const err = $('payError');
+        if (!VP.enabled || !VP.user) { err.textContent = 'Please sign in to pay with VeriPoints.'; err.classList.remove('hidden'); return; }
+        const gross = cartTotals().gross, cost = vpPointsForZmw(gross);
+        if (VP.balance.available < cost) { err.textContent = 'Not enough VeriPoints for this order.'; err.classList.remove('hidden'); return; }
+        err.classList.add('hidden');
+        const ref = 'ZB' + String(Math.floor(100000 + Math.random() * 900000));
+        $('pay2Total').textContent = fmtK(gross); $('pay2Phone').textContent = 'your VeriPoints wallet';
+        $('payStep1').classList.add('hidden'); $('payStep2').classList.remove('hidden');
+        try {
+            const hold = await window.VeriPoints.hold({ amount: cost, reference: ref });
+            const res = await fetch(vpApi('/api/veripoints/redeem'), {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ holdId: hold && hold.holdId, siteId: CONFIG.VERIPOINTS_SITE_ID, reference: ref }),
+                signal: AbortSignal.timeout(30000)
+            }).then(r => r.json());
+            if (!res || !res.captured) throw new Error('capture failed');
+        } catch (e) {
+            $('payStep2').classList.add('hidden'); $('payStep1').classList.remove('hidden');
+            err.textContent = 'VeriPoints payment could not be completed. Please try Mobile Money.'; err.classList.remove('hidden');
+            return;
+        }
+        const order = { provider: 'veripoints', phone: '', name: o.name, address: o.address, total: gross };
+        $('orderRef').textContent = '#' + ref;
+        $('payStep2').classList.add('hidden'); $('payStep3').classList.remove('hidden');
+        sendOrderToWhatsApp(ref, order);
+        vpAwardEarn(gross, ref);
+    }
+
+    // Loyalty accrual on any successful order — credited server-side by the
+    // central VeriPoints service (the store backend proxies it with its key).
+    function vpAwardEarn(paidZmw, ref) {
+        if (!VP.enabled || !VP.user || !(CONFIG.EARN_PERCENT > 0)) return;
+        const pts = Math.floor(paidZmw * CONFIG.EARN_PERCENT / 100);
+        if (pts <= 0) return;
+        fetch(vpApi('/api/veripoints/earn'), {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ uid: VP.user.uid, points: pts, siteId: CONFIG.VERIPOINTS_SITE_ID, reference: ref }),
+            signal: AbortSignal.timeout(20000)
+        }).then(r => r.json()).then(res => { if (res && res.credited) showToast('🎉 You earned ' + pts.toLocaleString() + ' VeriPoints!'); }).catch(() => {});
+    }
+
+    /* ================================================================
        INIT
        ================================================================ */
     (function initSupportLinks() {
@@ -1212,6 +1465,7 @@
 
     renderCart();
     loadProducts('');
+    vpInit(); // VeriPoints add-on — self-disables when CONFIG.VERIPOINTS_ENABLED is false
     </script>
 </body>
 </html>
