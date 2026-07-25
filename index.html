@@ -537,49 +537,68 @@
     };
 
     /* ================================================================
+       IMAGE PLACEHOLDER — clean on-brand SVG shown for demo products and
+       whenever a real product photo fails to load. Real AliExpress photos
+       replace it automatically once RAPIDAPI_KEY is set on the backend.
+       (var, so inline onerror handlers can see it)
+       ================================================================ */
+    var PLACEHOLDER = (function () {
+        var svg = "<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'>"
+            + "<defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>"
+            + "<stop offset='0' stop-color='#e0f2fe'/><stop offset='1' stop-color='#bae6fd'/>"
+            + "</linearGradient></defs>"
+            + "<rect width='400' height='400' fill='url(#g)'/>"
+            + "<text x='200' y='185' font-size='120' text-anchor='middle'>&#127868;</text>"
+            + "<text x='200' y='255' font-size='34' fill='#0369a1' font-family='Arial,sans-serif' font-weight='bold' text-anchor='middle'>ZedBaby</text>"
+            + "<text x='200' y='290' font-size='17' fill='#0284c7' font-family='Arial,sans-serif' text-anchor='middle'>Photo coming soon</text>"
+            + "</svg>";
+        return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    })();
+
+    /* ================================================================
        DEMO PRODUCTS — baby & mum essentials for Zambia
        (used when API_BASE_URL is empty or unreachable)
        ================================================================ */
     const DEMO_PRODUCTS = [
         // Feeding
-        { id:"f1", title:"Anti-Colic Baby Feeding Bottle Set 3pcs BPA-Free 240ml", priceUsd:6.50, oldUsd:14.00, rating:4.7, orders:18420, img:"https://picsum.photos/seed/bottleset/400/400" },
-        { id:"f2", title:"Silicone Baby Bibs Waterproof 2-Pack Adjustable Easy Clean", priceUsd:3.80, oldUsd:8.00, rating:4.6, orders:26310, img:"https://picsum.photos/seed/bibs/400/400" },
-        { id:"f3", title:"Electric Baby Bottle Warmer & Sterilizer Fast Heating", priceUsd:12.00, oldUsd:24.00, rating:4.5, orders:9130, img:"https://picsum.photos/seed/warmer/400/400" },
-        { id:"f4", title:"Baby Food Feeding Set Bowl Spoon Suction Plate BPA-Free", priceUsd:5.20, oldUsd:11.00, rating:4.6, orders:14220, img:"https://picsum.photos/seed/feedset/400/400" },
-        { id:"f5", title:"Silicone Baby Pacifier 2-Pack Orthodontic Newborn 0-6m", priceUsd:2.40, oldUsd:5.00, rating:4.5, orders:31240, img:"https://picsum.photos/seed/pacifier/400/400" },
+        { id:"f1", title:"Anti-Colic Baby Feeding Bottle Set 3pcs BPA-Free 240ml", priceUsd:6.50, oldUsd:14.00, rating:4.7, orders:18420, img:PLACEHOLDER },
+        { id:"f2", title:"Silicone Baby Bibs Waterproof 2-Pack Adjustable Easy Clean", priceUsd:3.80, oldUsd:8.00, rating:4.6, orders:26310, img:PLACEHOLDER },
+        { id:"f3", title:"Electric Baby Bottle Warmer & Sterilizer Fast Heating", priceUsd:12.00, oldUsd:24.00, rating:4.5, orders:9130, img:PLACEHOLDER },
+        { id:"f4", title:"Baby Food Feeding Set Bowl Spoon Suction Plate BPA-Free", priceUsd:5.20, oldUsd:11.00, rating:4.6, orders:14220, img:PLACEHOLDER },
+        { id:"f5", title:"Silicone Baby Pacifier 2-Pack Orthodontic Newborn 0-6m", priceUsd:2.40, oldUsd:5.00, rating:4.5, orders:31240, img:PLACEHOLDER },
         // Diapers & wipes
-        { id:"d1", title:"Reusable Cloth Diapers 4-Pack Adjustable Washable + Inserts", priceUsd:9.50, oldUsd:20.00, rating:4.6, orders:12480, img:"https://picsum.photos/seed/clothdiaper/400/400" },
-        { id:"d2", title:"Baby Wipes Fragrance-Free Sensitive Skin 80pcs x3 Packs", priceUsd:4.60, oldUsd:9.50, rating:4.6, orders:40210, img:"https://picsum.photos/seed/wipes/400/400" },
-        { id:"d3", title:"Portable Nappy Changing Mat Waterproof Foldable Travel", priceUsd:3.20, oldUsd:7.00, rating:4.5, orders:15980, img:"https://picsum.photos/seed/changemat/400/400" },
+        { id:"d1", title:"Reusable Cloth Diapers 4-Pack Adjustable Washable + Inserts", priceUsd:9.50, oldUsd:20.00, rating:4.6, orders:12480, img:PLACEHOLDER },
+        { id:"d2", title:"Baby Wipes Fragrance-Free Sensitive Skin 80pcs x3 Packs", priceUsd:4.60, oldUsd:9.50, rating:4.6, orders:40210, img:PLACEHOLDER },
+        { id:"d3", title:"Portable Nappy Changing Mat Waterproof Foldable Travel", priceUsd:3.20, oldUsd:7.00, rating:4.5, orders:15980, img:PLACEHOLDER },
         // Baby clothes
-        { id:"c1", title:"Newborn Baby Clothes Set 5pcs Cotton Bodysuits 0-12m", priceUsd:7.80, oldUsd:16.00, rating:4.7, orders:29870, img:"https://picsum.photos/seed/clothesset/400/400" },
-        { id:"c2", title:"Baby Romper Long-Sleeve Cotton Onesie Unisex 3-Pack", priceUsd:6.40, oldUsd:13.00, rating:4.6, orders:21450, img:"https://picsum.photos/seed/romper/400/400" },
-        { id:"c3", title:"Baby Socks & Mittens Set Newborn Anti-Scratch Soft Cotton", priceUsd:2.90, oldUsd:6.00, rating:4.5, orders:33120, img:"https://picsum.photos/seed/socks/400/400" },
-        { id:"c4", title:"Baby Hooded Bath Towel Wrap Soft Absorbent Animal Design", priceUsd:5.00, oldUsd:10.50, rating:4.6, orders:17640, img:"https://picsum.photos/seed/babytowel/400/400" },
+        { id:"c1", title:"Newborn Baby Clothes Set 5pcs Cotton Bodysuits 0-12m", priceUsd:7.80, oldUsd:16.00, rating:4.7, orders:29870, img:PLACEHOLDER },
+        { id:"c2", title:"Baby Romper Long-Sleeve Cotton Onesie Unisex 3-Pack", priceUsd:6.40, oldUsd:13.00, rating:4.6, orders:21450, img:PLACEHOLDER },
+        { id:"c3", title:"Baby Socks & Mittens Set Newborn Anti-Scratch Soft Cotton", priceUsd:2.90, oldUsd:6.00, rating:4.5, orders:33120, img:PLACEHOLDER },
+        { id:"c4", title:"Baby Hooded Bath Towel Wrap Soft Absorbent Animal Design", priceUsd:5.00, oldUsd:10.50, rating:4.6, orders:17640, img:PLACEHOLDER },
         // Strollers & carriers
-        { id:"st1", title:"Lightweight Foldable Baby Stroller One-Hand Fold Compact", priceUsd:48.00, oldUsd:95.00, rating:4.6, orders:6120, img:"https://picsum.photos/seed/stroller/400/400" },
-        { id:"st2", title:"Ergonomic Baby Carrier Wrap Breathable 4-Position Newborn+", priceUsd:14.50, oldUsd:30.00, rating:4.6, orders:11230, img:"https://picsum.photos/seed/carrier/400/400" },
-        { id:"st3", title:"Baby Car Seat Head & Body Support Pillow Cushion Insert", priceUsd:6.80, oldUsd:14.00, rating:4.5, orders:8760, img:"https://picsum.photos/seed/headsupport/400/400" },
+        { id:"st1", title:"Lightweight Foldable Baby Stroller One-Hand Fold Compact", priceUsd:48.00, oldUsd:95.00, rating:4.6, orders:6120, img:PLACEHOLDER },
+        { id:"st2", title:"Ergonomic Baby Carrier Wrap Breathable 4-Position Newborn+", priceUsd:14.50, oldUsd:30.00, rating:4.6, orders:11230, img:PLACEHOLDER },
+        { id:"st3", title:"Baby Car Seat Head & Body Support Pillow Cushion Insert", priceUsd:6.80, oldUsd:14.00, rating:4.5, orders:8760, img:PLACEHOLDER },
         // Nursery
-        { id:"nu1", title:"Baby Crib Bedding Set 4pcs Cotton Fitted Sheet + Bumper", priceUsd:18.00, oldUsd:38.00, rating:4.5, orders:5410, img:"https://picsum.photos/seed/bedding/400/400" },
-        { id:"nu2", title:"Baby Night Light Rechargeable Star Projector Soothing", priceUsd:8.20, oldUsd:17.00, rating:4.6, orders:19870, img:"https://picsum.photos/seed/nightlight/400/400" },
-        { id:"nu3", title:"Muslin Swaddle Blankets 3-Pack Breathable Cotton Newborn", priceUsd:9.00, oldUsd:19.00, rating:4.7, orders:22140, img:"https://picsum.photos/seed/swaddle/400/400" },
-        { id:"nu4", title:"Baby Monitor Wireless Camera Night Vision Two-Way Audio", priceUsd:26.00, oldUsd:52.00, rating:4.4, orders:4320, img:"https://picsum.photos/seed/monitor/400/400" },
+        { id:"nu1", title:"Baby Crib Bedding Set 4pcs Cotton Fitted Sheet + Bumper", priceUsd:18.00, oldUsd:38.00, rating:4.5, orders:5410, img:PLACEHOLDER },
+        { id:"nu2", title:"Baby Night Light Rechargeable Star Projector Soothing", priceUsd:8.20, oldUsd:17.00, rating:4.6, orders:19870, img:PLACEHOLDER },
+        { id:"nu3", title:"Muslin Swaddle Blankets 3-Pack Breathable Cotton Newborn", priceUsd:9.00, oldUsd:19.00, rating:4.7, orders:22140, img:PLACEHOLDER },
+        { id:"nu4", title:"Baby Monitor Wireless Camera Night Vision Two-Way Audio", priceUsd:26.00, oldUsd:52.00, rating:4.4, orders:4320, img:PLACEHOLDER },
         // Toys
-        { id:"to1", title:"Baby Educational Toys Soft Stacking Rings Montessori 0-3y", priceUsd:4.50, oldUsd:9.50, rating:4.6, orders:28650, img:"https://picsum.photos/seed/stacking/400/400" },
-        { id:"to2", title:"Baby Rattle & Teether Set 6pcs BPA-Free Sensory Newborn", priceUsd:3.60, oldUsd:7.50, rating:4.6, orders:34210, img:"https://picsum.photos/seed/rattle/400/400" },
-        { id:"to3", title:"Soft Baby Activity Play Mat Gym with Hanging Toys Foldable", priceUsd:15.00, oldUsd:31.00, rating:4.5, orders:9870, img:"https://picsum.photos/seed/playmat/400/400" },
+        { id:"to1", title:"Baby Educational Toys Soft Stacking Rings Montessori 0-3y", priceUsd:4.50, oldUsd:9.50, rating:4.6, orders:28650, img:PLACEHOLDER },
+        { id:"to2", title:"Baby Rattle & Teether Set 6pcs BPA-Free Sensory Newborn", priceUsd:3.60, oldUsd:7.50, rating:4.6, orders:34210, img:PLACEHOLDER },
+        { id:"to3", title:"Soft Baby Activity Play Mat Gym with Hanging Toys Foldable", priceUsd:15.00, oldUsd:31.00, rating:4.5, orders:9870, img:PLACEHOLDER },
         // Bath & care
-        { id:"ba1", title:"Foldable Baby Bath Tub Non-Slip Newborn to Toddler + Seat", priceUsd:16.50, oldUsd:34.00, rating:4.5, orders:7640, img:"https://picsum.photos/seed/bathtub/400/400" },
-        { id:"ba2", title:"Baby Grooming Kit 8pcs Nail Clipper Brush Comb Thermometer", priceUsd:5.40, oldUsd:11.00, rating:4.5, orders:16320, img:"https://picsum.photos/seed/grooming/400/400" },
-        { id:"ba3", title:"Baby Digital Thermometer Fast Read Fever Forehead & Ear", priceUsd:7.00, oldUsd:15.00, rating:4.5, orders:12980, img:"https://picsum.photos/seed/thermometer/400/400" },
+        { id:"ba1", title:"Foldable Baby Bath Tub Non-Slip Newborn to Toddler + Seat", priceUsd:16.50, oldUsd:34.00, rating:4.5, orders:7640, img:PLACEHOLDER },
+        { id:"ba2", title:"Baby Grooming Kit 8pcs Nail Clipper Brush Comb Thermometer", priceUsd:5.40, oldUsd:11.00, rating:4.5, orders:16320, img:PLACEHOLDER },
+        { id:"ba3", title:"Baby Digital Thermometer Fast Read Fever Forehead & Ear", priceUsd:7.00, oldUsd:15.00, rating:4.5, orders:12980, img:PLACEHOLDER },
         // Maternity
-        { id:"ma1", title:"Maternity Dress Comfortable Cotton Pregnancy Casual Wear", priceUsd:11.00, oldUsd:23.00, rating:4.5, orders:8210, img:"https://picsum.photos/seed/matdress/400/400" },
-        { id:"ma2", title:"Nursing Bra Wireless Seamless Maternity Breastfeeding 2-Pack", priceUsd:8.50, oldUsd:18.00, rating:4.5, orders:14560, img:"https://picsum.photos/seed/nursingbra/400/400" },
-        { id:"ma3", title:"Pregnancy Support Belt Belly Band Back Relief Adjustable", priceUsd:6.90, oldUsd:14.00, rating:4.4, orders:10230, img:"https://picsum.photos/seed/beltmat/400/400" },
+        { id:"ma1", title:"Maternity Dress Comfortable Cotton Pregnancy Casual Wear", priceUsd:11.00, oldUsd:23.00, rating:4.5, orders:8210, img:PLACEHOLDER },
+        { id:"ma2", title:"Nursing Bra Wireless Seamless Maternity Breastfeeding 2-Pack", priceUsd:8.50, oldUsd:18.00, rating:4.5, orders:14560, img:PLACEHOLDER },
+        { id:"ma3", title:"Pregnancy Support Belt Belly Band Back Relief Adjustable", priceUsd:6.90, oldUsd:14.00, rating:4.4, orders:10230, img:PLACEHOLDER },
         // Safety
-        { id:"sa1", title:"Baby Safety Gate Adjustable Pressure-Fit Stairs & Doorway", priceUsd:19.00, oldUsd:39.00, rating:4.5, orders:6540, img:"https://picsum.photos/seed/safetygate/400/400" },
-        { id:"sa2", title:"Child Safety Corner Guards & Cabinet Locks 20pcs Set", priceUsd:4.20, oldUsd:9.00, rating:4.5, orders:18760, img:"https://picsum.photos/seed/cornerguard/400/400" }
+        { id:"sa1", title:"Baby Safety Gate Adjustable Pressure-Fit Stairs & Doorway", priceUsd:19.00, oldUsd:39.00, rating:4.5, orders:6540, img:PLACEHOLDER },
+        { id:"sa2", title:"Child Safety Corner Guards & Cabinet Locks 20pcs Set", priceUsd:4.20, oldUsd:9.00, rating:4.5, orders:18760, img:PLACEHOLDER }
     ];
 
     /* ================================================================
@@ -635,7 +654,7 @@
         const rawOld = p.original_price || p.originalPrice || p.old_price || 0;
         const oldUsd = parseFloat(String(rawOld).replace(/[^0-9.]/g, '')) || 0;
         const img = p.image || p.product_main_image_url || p.main_image || p.img || p.imageUrl ||
-                    (p.images && p.images[0]) || 'https://picsum.photos/seed/zg' + i + '/400/400';
+                    (p.images && p.images[0]) || PLACEHOLDER;
         return {
             id: String(p.product_id || p.productId || p.item_id || p.id || 'api' + i),
             title,
@@ -778,7 +797,7 @@
             <div class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition cursor-pointer group fade-in" onclick="openProduct('${p.id}')">
                 <div class="relative">
                     <img src="${p.img}" alt="" loading="lazy" class="w-full aspect-square object-cover bg-baby-50 group-hover:scale-105 transition duration-300"
-                         onerror="this.src='https://picsum.photos/seed/fallback${p.id}/400/400'">
+                         onerror="this.onerror=null;this.src=PLACEHOLDER">
                     ${discount ? `<span class="absolute top-2 left-2 bg-zam-red text-white text-[10px] font-bold px-2 py-0.5 rounded-full">-${discount}%</span>` : ''}
                 </div>
                 <div class="p-3">
@@ -834,7 +853,7 @@
         $('budgetRow').innerHTML = cheap.slice(0, 10).map(p => `
             <div class="shrink-0 w-32 sm:w-36 bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer" onclick="openProduct('${p.id}')">
                 <img src="${p.img}" alt="" loading="lazy" class="w-full aspect-square object-cover bg-baby-50"
-                     onerror="this.src='https://picsum.photos/seed/b${p.id}/200/200'">
+                     onerror="this.onerror=null;this.src=PLACEHOLDER">
                 <div class="p-2">
                     <p class="text-[11px] text-slate-600 leading-snug line-clamp-2 h-7">${p.title}</p>
                     <p class="font-extrabold text-sm text-baby-700 mt-1">${fmtK(p.priceZmw)}</p>
@@ -943,7 +962,7 @@
         } else {
             $('cartItems').innerHTML = cart.map(i => `
             <div class="flex gap-3 bg-baby-50 rounded-xl p-3">
-                <img src="${i.img}" class="w-16 h-16 rounded-lg object-cover bg-baby-100" onerror="this.src='https://picsum.photos/seed/c${i.id}/100/100'">
+                <img src="${i.img}" class="w-16 h-16 rounded-lg object-cover bg-baby-100" onerror="this.onerror=null;this.src=PLACEHOLDER">
                 <div class="flex-1 min-w-0">
                     <p class="text-xs text-slate-600 line-clamp-2">${i.title}</p>
                     <div class="flex items-center justify-between mt-2">
