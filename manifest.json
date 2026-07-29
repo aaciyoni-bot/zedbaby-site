@@ -1,13 +1,13 @@
 {
-  "name": "ZedBaby - Baby & Mum Essentials, Pay with Mobile Money",
-  "short_name": "ZedBaby",
-  "description": "Zambia's baby & mum store: feeding, diapers, baby clothes, strollers, nursery and maternity essentials at wholesale prices. Pay with MTN MoMo, Airtel Money or Zamtel Kwacha.",
+  "name": "Mwanako - Baby & Mum Essentials, Pay with Mobile Money",
+  "short_name": "Mwanako",
+  "description": "Baby & mum store: feeding, diapers, baby clothes, strollers, nursery and maternity essentials at wholesale prices. Pay with MTN MoMo, Airtel Money or Zamtel Kwacha.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#06202e",
-  "theme_color": "#0284c7",
+  "background_color": "#5a1e33",
+  "theme_color": "#5a1e33",
   "categories": ["shopping", "lifestyle", "kids"],
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
